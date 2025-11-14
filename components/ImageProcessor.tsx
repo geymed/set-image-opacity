@@ -72,6 +72,192 @@ export default function ImageProcessor() {
       : null
   }
 
+  const getColorName = (hex: string): string => {
+    const normalizedHex = hex.toLowerCase()
+    const rgb = hexToRgb(normalizedHex)
+    if (!rgb) return normalizedHex
+
+    const colorMap: { [key: string]: string } = {
+      '#ffffff': 'White',
+      '#000000': 'Black',
+      '#ff0000': 'Red',
+      '#00ff00': 'Green',
+      '#0000ff': 'Blue',
+      '#ffff00': 'Yellow',
+      '#ff00ff': 'Magenta',
+      '#00ffff': 'Cyan',
+      '#ffa500': 'Orange',
+      '#800080': 'Purple',
+      '#ffc0cb': 'Pink',
+      '#a52a2a': 'Brown',
+      '#808080': 'Gray',
+      '#c0c0c0': 'Silver',
+      '#ffd700': 'Gold',
+      '#008000': 'Dark Green',
+      '#000080': 'Navy',
+      '#800000': 'Maroon',
+      '#008080': 'Teal',
+      '#ff6347': 'Tomato',
+      '#40e0d0': 'Turquoise',
+      '#ee82ee': 'Violet',
+      '#f5deb3': 'Wheat',
+      '#9acd32': 'Yellow Green',
+      '#2e8b57': 'Sea Green',
+      '#da70d6': 'Orchid',
+      '#d2691e': 'Chocolate',
+      '#cd5c5c': 'Indian Red',
+      '#4b0082': 'Indigo',
+      '#f0e68c': 'Khaki',
+      '#e6e6fa': 'Lavender',
+      '#fff0f5': 'Lavender Blush',
+      '#7cfc00': 'Lawn Green',
+      '#fffacd': 'Lemon Chiffon',
+      '#add8e6': 'Light Blue',
+      '#f08080': 'Light Coral',
+      '#e0ffff': 'Light Cyan',
+      '#fafad2': 'Light Goldenrod Yellow',
+      '#d3d3d3': 'Light Gray',
+      '#90ee90': 'Light Green',
+      '#ffb6c1': 'Light Pink',
+      '#ffa07a': 'Light Salmon',
+      '#20b2aa': 'Light Sea Green',
+      '#87cefa': 'Light Sky Blue',
+      '#778899': 'Light Slate Gray',
+      '#b0c4de': 'Light Steel Blue',
+      '#ffffe0': 'Light Yellow',
+      '#32cd32': 'Lime Green',
+      '#faf0e6': 'Linen',
+      '#ff00ff': 'Magenta',
+      '#800000': 'Maroon',
+      '#66cdaa': 'Medium Aquamarine',
+      '#0000cd': 'Medium Blue',
+      '#ba55d3': 'Medium Orchid',
+      '#9370db': 'Medium Purple',
+      '#3cb371': 'Medium Sea Green',
+      '#7b68ee': 'Medium Slate Blue',
+      '#00fa9a': 'Medium Spring Green',
+      '#48d1cc': 'Medium Turquoise',
+      '#c71585': 'Medium Violet Red',
+      '#191970': 'Midnight Blue',
+      '#f5fffa': 'Mint Cream',
+      '#ffe4e1': 'Misty Rose',
+      '#ffe4b5': 'Moccasin',
+      '#ffdead': 'Navajo White',
+      '#000080': 'Navy',
+      '#fdf5e6': 'Old Lace',
+      '#808000': 'Olive',
+      '#6b8e23': 'Olive Drab',
+      '#ffa500': 'Orange',
+      '#ff4500': 'Orange Red',
+      '#da70d6': 'Orchid',
+      '#eee8aa': 'Pale Goldenrod',
+      '#98fb98': 'Pale Green',
+      '#afeeee': 'Pale Turquoise',
+      '#db7093': 'Pale Violet Red',
+      '#ffefd5': 'Papaya Whip',
+      '#ffdab9': 'Peach Puff',
+      '#cd853f': 'Peru',
+      '#ffc0cb': 'Pink',
+      '#dda0dd': 'Plum',
+      '#b0e0e6': 'Powder Blue',
+      '#800080': 'Purple',
+      '#ff0000': 'Red',
+      '#bc8f8f': 'Rosy Brown',
+      '#4169e1': 'Royal Blue',
+      '#8b4513': 'Saddle Brown',
+      '#fa8072': 'Salmon',
+      '#f4a460': 'Sandy Brown',
+      '#2e8b57': 'Sea Green',
+      '#fff5ee': 'Seashell',
+      '#a0522d': 'Sienna',
+      '#c0c0c0': 'Silver',
+      '#87ceeb': 'Sky Blue',
+      '#6a5acd': 'Slate Blue',
+      '#708090': 'Slate Gray',
+      '#fffafa': 'Snow',
+      '#00ff7f': 'Spring Green',
+      '#4682b4': 'Steel Blue',
+      '#d2b48c': 'Tan',
+      '#008080': 'Teal',
+      '#d8bfd8': 'Thistle',
+      '#ff6347': 'Tomato',
+      '#40e0d0': 'Turquoise',
+      '#ee82ee': 'Violet',
+      '#f5deb3': 'Wheat',
+      '#ffffff': 'White',
+      '#f5f5f5': 'White Smoke',
+      '#ffff00': 'Yellow',
+      '#9acd32': 'Yellow Green',
+    }
+
+    if (colorMap[normalizedHex]) {
+      return colorMap[normalizedHex]
+    }
+
+    let closestColor = ''
+    let minDistance = Infinity
+
+    for (const [hexKey, colorName] of Object.entries(colorMap)) {
+      const keyRgb = hexToRgb(hexKey)
+      if (!keyRgb) continue
+
+      const distance = Math.sqrt(
+        Math.pow(rgb.r - keyRgb.r, 2) +
+        Math.pow(rgb.g - keyRgb.g, 2) +
+        Math.pow(rgb.b - keyRgb.b, 2)
+      )
+
+      if (distance < minDistance) {
+        minDistance = distance
+        closestColor = colorName
+      }
+    }
+
+    if (minDistance < 30) {
+      return closestColor
+    }
+
+    const getColorDescription = (r: number, g: number, b: number): string => {
+      const max = Math.max(r, g, b)
+      const min = Math.min(r, g, b)
+      const diff = max - min
+      const sum = r + g + b
+      const lightness = sum / 3
+
+      if (diff < 10) {
+        if (lightness > 240) return 'White'
+        if (lightness < 15) return 'Black'
+        return 'Gray'
+      }
+
+      const hue = (() => {
+        if (diff === 0) return 0
+        if (max === r) return ((g - b) / diff) % 6
+        if (max === g) return (b - r) / diff + 2
+        return (r - g) / diff + 4
+      })()
+
+      const hueDeg = Math.round(hue * 60)
+      const saturation = diff / max
+      const brightness = max / 255
+
+      if (brightness < 0.2) return 'Very Dark'
+      if (brightness > 0.9) return 'Very Light'
+      if (saturation < 0.2) return 'Grayish'
+
+      if (hueDeg >= 0 && hueDeg < 15) return 'Red'
+      if (hueDeg >= 15 && hueDeg < 45) return 'Orange'
+      if (hueDeg >= 45 && hueDeg < 75) return 'Yellow'
+      if (hueDeg >= 75 && hueDeg < 150) return 'Green'
+      if (hueDeg >= 150 && hueDeg < 210) return 'Cyan'
+      if (hueDeg >= 210 && hueDeg < 270) return 'Blue'
+      if (hueDeg >= 270 && hueDeg < 330) return 'Purple'
+      return 'Pink'
+    }
+
+    return getColorDescription(rgb.r, rgb.g, rgb.b)
+  }
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files || files.length === 0) return
@@ -254,10 +440,19 @@ export default function ImageProcessor() {
           }}>
             Background Color
           </label>
+          <p style={{
+            fontSize: '0.875rem',
+            color: '#666',
+            marginBottom: '0.75rem',
+            lineHeight: '1.4',
+          }}>
+            This color will be visible behind transparent areas of your images. Adjust the opacity slider to control how much of the background shows through.
+          </p>
           <div style={{
             display: 'flex',
             gap: '1rem',
             alignItems: 'center',
+            flexWrap: 'wrap',
           }}>
             <input
               type="color"
@@ -277,6 +472,7 @@ export default function ImageProcessor() {
               onChange={(e) => handleBackgroundColorChange(e.target.value)}
               style={{
                 flex: 1,
+                minWidth: '150px',
                 padding: '0.75rem',
                 border: '2px solid #ddd',
                 borderRadius: '8px',
@@ -284,6 +480,18 @@ export default function ImageProcessor() {
               }}
               placeholder="#ffffff"
             />
+            <div style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '8px',
+              fontSize: '0.95rem',
+              fontWeight: '500',
+              color: '#333',
+              minWidth: '120px',
+              textAlign: 'center',
+            }}>
+              {getColorName(backgroundColor)}
+            </div>
           </div>
         </div>
 

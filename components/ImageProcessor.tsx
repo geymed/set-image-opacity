@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 
 interface ProcessedImage {
   id: string
@@ -14,7 +14,10 @@ export default function ImageProcessor() {
   const [images, setImages] = useState<ProcessedImage[]>([])
   const [backgroundColor, setBackgroundColor] = useState('#ffffff')
   const [opacity, setOpacity] = useState(100)
+  const [displayOpacity, setDisplayOpacity] = useState(100)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const opacityTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isProcessingRef = useRef(false)
 
   const processImage = useCallback(async (
     imageUrl: string,
@@ -253,14 +256,14 @@ export default function ImageProcessor() {
       const id = `${Date.now()}-${i}`
       const originalUrl = URL.createObjectURL(file)
 
-      const processedUrl = await processImage(originalUrl, opacity, backgroundColor)
+      const processedUrl = await processImage(originalUrl, displayOpacity, backgroundColor)
 
       newImages.push({
         id,
         originalFile: file,
         originalUrl,
         processedUrl,
-        opacity,
+        opacity: displayOpacity,
       })
     }
 
@@ -285,26 +288,53 @@ export default function ImageProcessor() {
     setImages(updatedImages)
   }, [images, opacity, backgroundColor, processImage])
 
-  const handleOpacityChange = async (newOpacity: number) => {
-    setOpacity(newOpacity)
-    const updatedImages = await Promise.all(
-      images.map(async (img) => {
-        const processedUrl = await processImage(img.originalUrl, newOpacity, backgroundColor)
-        return {
-          ...img,
-          processedUrl,
-          opacity: newOpacity,
-        }
-      })
-    )
-    setImages(updatedImages)
+  const processImagesWithOpacity = useCallback(async (newOpacity: number) => {
+    if (images.length === 0 || isProcessingRef.current) return
+    
+    isProcessingRef.current = true
+    try {
+      const updatedImages = await Promise.all(
+        images.map(async (img) => {
+          const processedUrl = await processImage(img.originalUrl, newOpacity, backgroundColor)
+          return {
+            ...img,
+            processedUrl,
+            opacity: newOpacity,
+          }
+        })
+      )
+      setImages(updatedImages)
+      setOpacity(newOpacity)
+    } finally {
+      isProcessingRef.current = false
+    }
+  }, [images, backgroundColor, processImage])
+
+  const handleOpacityChange = (newOpacity: number) => {
+    setDisplayOpacity(newOpacity)
+    
+    if (opacityTimeoutRef.current) {
+      clearTimeout(opacityTimeoutRef.current)
+    }
+    
+    opacityTimeoutRef.current = setTimeout(() => {
+      processImagesWithOpacity(newOpacity)
+    }, 150)
   }
+
+  useEffect(() => {
+    return () => {
+      if (opacityTimeoutRef.current) {
+        clearTimeout(opacityTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleBackgroundColorChange = async (newColor: string) => {
     setBackgroundColor(newColor)
     const updatedImages = await Promise.all(
       images.map(async (img) => {
-        const processedUrl = await processImage(img.originalUrl, opacity, newColor)
+        const processedUrl = await processImage(img.originalUrl, displayOpacity, newColor)
         return {
           ...img,
           processedUrl,
@@ -394,13 +424,13 @@ export default function ImageProcessor() {
             fontWeight: '600',
             color: '#333',
           }}>
-            Opacity: {opacity}%
+            Opacity: {displayOpacity}%
           </label>
           <input
             type="range"
             min="0"
             max="100"
-            value={opacity}
+            value={displayOpacity}
             onChange={(e) => handleOpacityChange(Number(e.target.value))}
             style={{
               width: '100%',
